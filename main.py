@@ -38,17 +38,28 @@ def mark_attendance():
     print("\n--- Mark Attendance ---")
 
     for student in students:
+        roll_no = student["roll_no"]
+
+        if roll_no not in attendance:
+            attendance[roll_no] = {
+                "total": 0,
+                "present": 0,
+                "absent": 0
+            }
+
         choice = input(
-            f"Is {student['name']} (Roll No: {student['roll_no']}) present? (y/n): "
+            f"Is {student['name']} (Roll No: {roll_no}) present? (y/n): "
         )
 
+        attendance[roll_no]["total"] += 1
+
         if choice.lower() == "y":
-            attendance[student["roll_no"]] = "Present"
+            attendance[roll_no]["present"] += 1
         elif choice.lower() == "n":
-            attendance[student["roll_no"]] = "Absent"
+            attendance[roll_no]["absent"] += 1
         else:
             print("Invalid choice. Marked as Absent.")
-            attendance[student["roll_no"]] = "Absent"
+            attendance[roll_no]["absent"] += 1
 
     print("Attendance marked successfully!")
 
@@ -58,19 +69,30 @@ def view_attendance():
         print("No students registered.")
         return
 
-    if not attendance:
-        print("Attendance has not been marked yet.")
-        return
-
     print("\n--- Attendance Report ---")
 
     for student in students:
         roll_no = student["roll_no"]
-        status = attendance.get(roll_no, "Not Marked")
+
+        if roll_no not in attendance:
+            print("Roll No:", roll_no)
+            print("Name:", student["name"])
+            print("Attendance: Not Marked")
+            print("-------------------")
+            continue
+
+        total = attendance[roll_no]["total"]
+        present = attendance[roll_no]["present"]
+        absent = attendance[roll_no]["absent"]
+
+        percentage = (present / total) * 100
 
         print("Roll No:", roll_no)
         print("Name:", student["name"])
-        print("Attendance:", status)
+        print("Total Classes:", total)
+        print("Present:", present)
+        print("Absent:", absent)
+        print(f"Attendance: {percentage:.2f}%")
         print("-------------------")
 
 
