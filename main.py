@@ -1,28 +1,41 @@
-students = []
-attendance = {}
+import sqlite3
+
+# Connect to database
+conn = sqlite3.connect("attendance.db")
+cursor = conn.cursor()
+
+# Create students table
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS students (
+    roll_no TEXT PRIMARY KEY,
+    name TEXT NOT NULL
+)
+""")
+
+conn.commit()
 
 
 def add_student():
     name = input("Enter student name: ")
     roll_no = input("Enter roll number: ")
 
-    # Check if roll number already exists
-    for student in students:
-        if student["roll_no"] == roll_no:
-            print("Student with this roll number already exists.")
-            return
+    try:
+        cursor.execute(
+            "INSERT INTO students (roll_no, name) VALUES (?, ?)",
+            (roll_no, name)
+        )
 
-    student = {
-        "name": name,
-        "roll_no": roll_no
-    }
+        conn.commit()
+        print("Student added successfully!")
 
-    students.append(student)
-
-    print("Student added successfully!")
+    except sqlite3.IntegrityError:
+        print("Student with this roll number already exists.")
 
 
 def view_students():
+    cursor.execute("SELECT roll_no, name FROM students")
+    students = cursor.fetchall()
+
     if not students:
         print("No students registered.")
         return
@@ -30,143 +43,89 @@ def view_students():
     print("\n--- Student List ---")
 
     for student in students:
-        print("Roll No:", student["roll_no"])
-        print("Name:", student["name"])
-        print("-------------------")
-
-
-def mark_attendance():
-    if not students:
-        print("No students registered.")
-        return
-
-    print("\n--- Mark Attendance ---")
-
-    for student in students:
-        roll_no = student["roll_no"]
-
-        if roll_no not in attendance:
-            attendance[roll_no] = {
-                "total": 0,
-                "present": 0,
-                "absent": 0
-            }
-
-        choice = input(
-            f"Is {student['name']} (Roll No: {roll_no}) present? (y/n): "
-        )
-
-        attendance[roll_no]["total"] += 1
-
-        if choice.lower() == "y":
-            attendance[roll_no]["present"] += 1
-        elif choice.lower() == "n":
-            attendance[roll_no]["absent"] += 1
-        else:
-            print("Invalid choice. Marked as Absent.")
-            attendance[roll_no]["absent"] += 1
-
-    print("Attendance marked successfully!")
-
-
-def view_attendance():
-    if not students:
-        print("No students registered.")
-        return
-
-    print("\n--- Attendance Report ---")
-
-    for student in students:
-        roll_no = student["roll_no"]
-
-        if roll_no not in attendance:
-            print("Roll No:", roll_no)
-            print("Name:", student["name"])
-            print("Attendance: Not Marked")
-            print("-------------------")
-            continue
-
-        total = attendance[roll_no]["total"]
-        present = attendance[roll_no]["present"]
-        absent = attendance[roll_no]["absent"]
-
-        percentage = (present / total) * 100
-
-        print("Roll No:", roll_no)
-        print("Name:", student["name"])
-        print("Total Classes:", total)
-        print("Present:", present)
-        print("Absent:", absent)
-        print(f"Attendance: {percentage:.2f}%")
+        print("Roll No:", student[0])
+        print("Name:", student[1])
         print("-------------------")
 
 
 def search_student():
-    if not students:
-        print("No students registered.")
-        return
-
     roll_no = input("Enter roll number to search: ")
 
-    for student in students:
-        if student["roll_no"] == roll_no:
-            print("\n--- Student Found ---")
-            print("Roll No:", student["roll_no"])
-            print("Name:", student["name"])
+    cursor.execute(
+        "SELECT roll_no, name FROM students WHERE roll_no = ?",
+        (roll_no,)
+    )
 
-            if roll_no in attendance:
-                total = attendance[roll_no]["total"]
-                present = attendance[roll_no]["present"]
+    student = cursor.fetchone()
 
-                percentage = (present / total) * 100
-
-                print(f"Attendance: {percentage:.2f}%")
-            else:
-                print("Attendance: Not Marked")
-
-            return
-
-    print("Student not found.")
-
-
-def delete_student():
-    if not students:
-        print("No students registered.")
-        return
-
-    roll_no = input("Enter roll number to delete: ")
-
-    for student in students:
-        if student["roll_no"] == roll_no:
-            students.remove(student)
-
-            # Remove attendance record also
-            if roll_no in attendance:
-                del attendance[roll_no]
-
-            print("Student deleted successfully!")
-            return
-
-    print("Student not found.")
+    if student:
+        print("\n--- Student Found ---")
+        print("Roll No:", student[0])
+        print("Name:", student[1])
+    else:
+        print("Student not found.")
 
 
 def update_student():
-    if not students:
-        print("No students registered.")
-        return
-
     roll_no = input("Enter roll number to update: ")
 
-    for student in students:
-        if student["roll_no"] == roll_no:
-            new_name = input("Enter new student name: ")
+    cursor.execute(
+        "SELECT roll_no FROM students WHERE roll_no = ?",
+        (roll_no,)
+    )
 
-            student["name"] = new_name
+    student = cursor.fetchone()
 
-            print("Student updated successfully!")
-            return
+    if not student:
+        print("Student not found.")
+        return
 
-    print("Student not found.")
+    new_name = input("Enter new student name: ")
+
+    cursor.execute(
+        "UPDATE students SET name = ? WHERE roll_no = ?",
+        (new_name, roll_no)
+    )
+
+    conn.commit()
+
+    print("Student updated successfully!")
+
+
+def delete_student():
+    roll_no = input("Enter roll number to delete: ")
+
+    cursor.execute(
+        "SELECT roll_no FROM students WHERE roll_no = ?",
+        (roll_no,)
+    )
+
+    student = cursor.fetchone()
+
+    if not student:
+        print("Student not found.")
+        return
+
+    cursor.execute(
+        "DELETE FROM students WHERE roll_no = ?",
+        (roll_no,)
+    )
+
+    conn.commit()
+
+    print("Student deleted successfully!")
+
+
+def mark_attendance():
+    print("\nAttendance feature will be connected to database next.")
+
+
+def view_attendance():
+    print("\nAttendance report will be connected to database next.")
+
+
+def attendance_percentage():
+    print("\nAttendance percentage will be connected to database next.")
 
 
 while True:
@@ -178,7 +137,8 @@ while True:
     print("5. Search Student")
     print("6. Delete Student")
     print("7. Update Student")
-    print("8. Exit")
+    print("8. Attendance Percentage")
+    print("9. Exit")
 
     choice = input("Enter your choice: ")
 
@@ -204,7 +164,11 @@ while True:
         update_student()
 
     elif choice == "8":
+        attendance_percentage()
+
+    elif choice == "9":
         print("Thank you!")
+        conn.close()
         break
 
     else:
