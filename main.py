@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import date
 
 # Connect to database
 conn = sqlite3.connect("attendance.db")
@@ -9,6 +10,17 @@ cursor.execute("""
 CREATE TABLE IF NOT EXISTS students (
     roll_no TEXT PRIMARY KEY,
     name TEXT NOT NULL
+)
+""")
+
+# Create attendance table
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS attendance (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    roll_no TEXT NOT NULL,
+    date TEXT NOT NULL,
+    status TEXT NOT NULL,
+    FOREIGN KEY (roll_no) REFERENCES students(roll_no)
 )
 """)
 
@@ -117,17 +129,143 @@ def delete_student():
 
 
 def mark_attendance():
-    print("\nAttendance feature will be connected to database next.")
+    today = str(date.today())
+
+    cursor.execute("SELECT roll_no, name FROM students")
+    students = cursor.fetchall()
+
+    if not students:
+        print("No students registered.")
+        return
+
+    print("\n--- Mark Attendance ---")
+    print("Date:", today)
+
+    for student in students:
+        roll_no = student[0]
+        name = student[1]
+
+        print("\nRoll No:", roll_no)
+        print("Name:", name)
+
+        status = input("Enter P for Present / A for Absent: ").upper()
+
+        while status not in ["P", "A"]:
+            print("Invalid choice!")
+            status = input("Enter P for Present / A for Absent: ").upper()
+
+        if status == "P":
+            attendance_status = "Present"
+        else:
+            attendance_status = "Absent"
+
+        # Check if attendance is already marked today
+        cursor.execute(
+            """
+            SELECT id FROM attendance
+            WHERE roll_no = ? AND date = ?
+            """,
+            (roll_no, today)
+        )
+
+        existing = cursor.fetchone()
+
+        if existing:
+            cursor.execute(
+                """
+                UPDATE attendance
+                SET status = ?
+                WHERE roll_no = ? AND date = ?
+                """,
+                (attendance_status, roll_no, today)
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT INTO attendance (roll_no, date, status)
+                VALUES (?, ?, ?)
+                """,
+                (roll_no, today, attendance_status)
+            )
+
+    conn.commit()
+    print("\nAttendance marked successfully!")
 
 
 def view_attendance():
-    print("\nAttendance report will be connected to database next.")
+    cursor.execute("""
+        SELECT attendance.roll_no,
+               students.name,
+               attendance.date,
+               attendance.status
+        FROM attendance
+        JOIN students
+        ON attendance.roll_no = students.roll_no
+        ORDER BY attendance.date
+    """)
+
+    records = cursor.fetchall()
+
+    if not records:
+        print("\nNo attendance records found.")
+        return
+
+    print("\n--- Attendance Report ---")
+
+    for record in records:
+        print("Roll No:", record[0])
+        print("Name:", record[1])
+        print("Date:", record[2])
+        print("Status:", record[3])
+        print("------------------------")
 
 
 def attendance_percentage():
-    print("\nAttendance percentage will be connected to database next.")
+    roll_no = input("Enter roll number: ")
+
+    cursor.execute(
+        "SELECT name FROM students WHERE roll_no = ?",
+        (roll_no,)
+    )
+
+    student = cursor.fetchone()
+
+    if not student:
+        print("Student not found.")
+        return
+
+    cursor.execute(
+        """
+        SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN status = 'Present' THEN 1 ELSE 0 END)
+        FROM attendance
+        WHERE roll_no = ?
+        """,
+        (roll_no,)
+    )
+
+    result = cursor.fetchone()
+
+    total = result[0]
+    present = result[1] or 0
+
+    if total == 0:
+        print("No attendance records found.")
+        return
+
+    percentage = (present / total) * 100
+
+    print("\n--- Attendance Percentage ---")
+    print("Roll No:", roll_no)
+    print("Name:", student[0])
+    print("Total Classes:", total)
+    print("Present:", present)
+    print("Absent:", total - present)
+    print("Attendance Percentage:", round(percentage, 2), "%")
 
 
+# Main menu
 while True:
     print("\n--- Student Attendance System ---")
     print("1. Add Student")
