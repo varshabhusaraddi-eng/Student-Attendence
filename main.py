@@ -1,3 +1,4 @@
+
 students = []
 attendance = {}
 
@@ -43,10 +44,34 @@ def mark_attendance():
 
         if choice.lower() == "y":
             attendance[student["roll_no"]] = "Present"
+        elif choice.lower() == "n":
+            attendance[student["roll_no"]] = "Absent"
         else:
+            print("Invalid choice. Marked as Absent.")
             attendance[student["roll_no"]] = "Absent"
 
     print("Attendance marked successfully!")
+
+
+def view_attendance():
+    if not students:
+        print("No students registered.")
+        return
+
+    if not attendance:
+        print("Attendance has not been marked yet.")
+        return
+
+    print("\n--- Attendance Report ---")
+
+    for student in students:
+        roll_no = student["roll_no"]
+        status = attendance.get(roll_no, "Not Marked")
+
+        print("Roll No:", roll_no)
+        print("Name:", student["name"])
+        print("Attendance:", status)
+        print("-------------------")
 
 
 while True:
@@ -54,7 +79,8 @@ while True:
     print("1. Add Student")
     print("2. View Students")
     print("3. Mark Attendance")
-    print("4. Exit")
+    print("4. View Attendance")
+    print("5. Exit")
 
     choice = input("Enter your choice: ")
 
@@ -68,6 +94,9 @@ while True:
         mark_attendance()
 
     elif choice == "4":
+        view_attendance()
+
+    elif choice == "5":
         print("Thank you!")
         break
 
