@@ -96,13 +96,42 @@ def view_attendance():
         print("-------------------")
 
 
+def search_student():
+    if not students:
+        print("No students registered.")
+        return
+
+    roll_no = input("Enter roll number to search: ")
+
+    for student in students:
+        if student["roll_no"] == roll_no:
+            print("\n--- Student Found ---")
+            print("Roll No:", student["roll_no"])
+            print("Name:", student["name"])
+
+            if roll_no in attendance:
+                total = attendance[roll_no]["total"]
+                present = attendance[roll_no]["present"]
+
+                percentage = (present / total) * 100
+
+                print(f"Attendance: {percentage:.2f}%")
+            else:
+                print("Attendance: Not Marked")
+
+            return
+
+    print("Student not found.")
+
+
 while True:
     print("\n--- Student Attendance System ---")
     print("1. Add Student")
     print("2. View Students")
     print("3. Mark Attendance")
     print("4. View Attendance")
-    print("5. Exit")
+    print("5. Search Student")
+    print("6. Exit")
 
     choice = input("Enter your choice: ")
 
@@ -119,6 +148,9 @@ while True:
         view_attendance()
 
     elif choice == "5":
+        search_student()
+
+    elif choice == "6":
         print("Thank you!")
         break
 
