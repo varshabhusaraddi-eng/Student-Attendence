@@ -7,6 +7,12 @@ def add_student():
     name = input("Enter student name: ")
     roll_no = input("Enter roll number: ")
 
+    # Check if roll number already exists
+    for student in students:
+        if student["roll_no"] == roll_no:
+            print("Student with this roll number already exists.")
+            return
+
     student = {
         "name": name,
         "roll_no": roll_no
@@ -124,6 +130,27 @@ def search_student():
     print("Student not found.")
 
 
+def delete_student():
+    if not students:
+        print("No students registered.")
+        return
+
+    roll_no = input("Enter roll number to delete: ")
+
+    for student in students:
+        if student["roll_no"] == roll_no:
+            students.remove(student)
+
+            # Remove attendance record also
+            if roll_no in attendance:
+                del attendance[roll_no]
+
+            print("Student deleted successfully!")
+            return
+
+    print("Student not found.")
+
+
 while True:
     print("\n--- Student Attendance System ---")
     print("1. Add Student")
@@ -131,7 +158,8 @@ while True:
     print("3. Mark Attendance")
     print("4. View Attendance")
     print("5. Search Student")
-    print("6. Exit")
+    print("6. Delete Student")
+    print("7. Exit")
 
     choice = input("Enter your choice: ")
 
@@ -151,6 +179,9 @@ while True:
         search_student()
 
     elif choice == "6":
+        delete_student()
+
+    elif choice == "7":
         print("Thank you!")
         break
 
